@@ -1,0 +1,11 @@
+
+<extentreports>
+  <configuration>
+    <theme>standard</theme>
+    <encoding>UTF-8</encoding>
+    <documentTitle>UI Automation</documentTitle>
+    <reportName>Playwright + Cucumber (QA/Stage)</reportName>
+    <timelineEnabled>true</timelineEnabled>
+    <protocol>https</protocol>
+  </configuration>
+</extentreports>
