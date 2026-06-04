@@ -19,16 +19,44 @@ public class PricebookSteps {
     private final Config cfg = ConfigLoader.load();
     private Page page;
     private PricebookPage pb;
-
-    @Given("I login to rSuite with email {string} and password {string}")
-    public void i_login_to_rsuite(String email, String password) throws Exception {
-        log.info("Step: I login to rSuite with email '{}'", email);
-        page = PlaywrightManager.page();
-        pb = new PricebookPage(page);
-        pb.openLogin(cfg.baseUrl());
-        pb.login(email, password);
+    // CONSTRUCTOR: This runs automatically before every scenario
+    public PricebookSteps() {
+        // Get the existing page from your Manager
+        this.page = PlaywrightManager.page();
+        // Initialize the Page Object immediately
+        this.pb = new PricebookPage(this.page);
     }
-
+//    @Given("I login to rSuite with email {string} and password {string}")
+//    public void i_login_to_rsuite(String email, String password) throws Exception {
+//        log.info("Step: I login to rSuite with email '{}'", email);
+//        //page = PlaywrightManager.page();
+//        //pb = new PricebookPage(page);
+//        pb.openLogin(cfg.baseUrl());
+//        pb.login(email, password);
+//    }
+//    @Given("I am logged into rSuite")
+//    public void i_am_logged_into_rsuite() throws Exception {
+//        // Pull from your existing Config object instead of Gherkin parameters
+//        String email = cfg.email();
+//        String password = cfg.password();
+//         log.info("Step: I login to rSuite with email '{}'", email);
+//
+//        page = PlaywrightManager.page();
+//        pb = new PricebookPage(page);
+//
+//        // Check if we are already logged in to save time
+//        if (!page.url().contains("dashboard")) {
+//            pb.openLogin(cfg.baseUrl());
+//            pb.login(email, password);
+//        }
+//    }
+//    @Given("I navigate to the rSuite Dashboard")
+//    public void i_navigate_to_dashboard() {
+//        log.info("Navigating to dashboard");
+//
+//        // Force the browser back to the starting point for every test
+//        page.navigate(cfg.baseUrl());
+//    }
     @When("I create a new editable pricebook named {string} for org {string} using region query {string} and supplier {string}")
     public void i_create_new_editable_pricebook(String name, String orgFieldName, String regionQuery, String supplierButtonName) {
         log.info("Step: I create a new editable pricebook named '{}'", name);

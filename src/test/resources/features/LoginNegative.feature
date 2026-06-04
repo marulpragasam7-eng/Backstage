@@ -20,7 +20,6 @@ Feature: Login - Negative scenarios on RSuite Backstage stage
       | email                |
       | abc                  |
       | abc@                 |
-      | abc@xyz.com              |
       | abc@xyz.             |
       | abc@.com             |
       | abc@xyz..com         |

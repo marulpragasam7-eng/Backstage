@@ -16,19 +16,30 @@ public class PricebookPage extends BasePage {
     private final Config cfg = ConfigLoader.load();
 
     public PricebookPage(Page page) {
+
         super(page);
     }
 
     // ---------- Login & Navigate ----------
 
-    public void openLogin(String baseUrl) {
-        String url = baseUrl.endsWith("/") ?
-                baseUrl + "Site/Login?status=NotLoggedIn" :
-                baseUrl + "/Site/Login?status=NotLoggedIn";
-        log.info("Navigating to login page: {}", url);
-        page.navigate(url);
-        WaitUtils.networkIdle(page);
-    }
+//    public void openLogin(String baseUrl) {
+//        String url = baseUrl.endsWith("/") ?
+////                baseUrl + "Site/Login?status=NotLoggedIn" :
+//                baseUrl + "/Site/Login?status=NotLoggedIn";
+//        log.info("Navigating to login page: {}", url);
+//        page.navigate(url);
+//        WaitUtils.networkIdle(page);
+//    }
+public void openLogin(String baseUrl) {
+    // This ignores any trailing slashes and forces the correct path
+    String url = baseUrl.trim() + "/Site/Login?status=NotLoggedIn";
+
+    log.info("Navigating to login page: {}", url);
+    page.navigate(url);
+
+    // Ensures the page is fully loaded before proceeding
+    WaitUtils.networkIdle(page);
+}
 
     public void login(String email, String password) throws Exception {
         log.info("Attempting to log in as user '{}'", email);
@@ -38,6 +49,8 @@ public class PricebookPage extends BasePage {
 
         Locator pwdBox = page.getByRole(AriaRole.TEXTBOX, new Page.GetByRoleOptions().setName("Password"));
         pwdBox.fill(password);
+        WaitUtils.visible(emailBox, 20000);
+
         pwdBox.press("Enter");
 
         Locator manageBtn = page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Manage rSuite"));

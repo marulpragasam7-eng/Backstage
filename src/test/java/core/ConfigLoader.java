@@ -32,10 +32,21 @@ public final class ConfigLoader {
     // --- FIX: Load email and password from properties ---
     String email = System.getProperty("email", props.getProperty("email", ""));
     String password = System.getProperty("password", props.getProperty("password", ""));
-
+    String loginUrl = System.getProperty("login.url", props.getProperty("login.url", baseUrl + "/login"));
     // --- FIX: Pass the new email and password arguments to the constructor ---
-    return new Config(baseUrl, browser, headless, trace, video, ignoreHttpsErrors, actionRetryCount, actionRetryDelayMs);
-  }
+    return new Config(
+            baseUrl,
+            loginUrl,
+            browser,
+            headless,
+            trace,
+            video,
+            ignoreHttpsErrors,
+            actionRetryCount,
+            actionRetryDelayMs,
+            email,    // Pass email
+            password  // Pass password
+    );  }
 
   private static InputStream resource(String path) {
     return Thread.currentThread().getContextClassLoader().getResourceAsStream(path);

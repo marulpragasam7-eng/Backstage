@@ -2,6 +2,7 @@ package pages;
 
 import com.microsoft.playwright.*;
 import com.microsoft.playwright.options.AriaRole;
+import com.microsoft.playwright.options.LoadState;
 import core.PlaywrightManager;
 import core.WaitUtils;
 import core.RetryUtils;
@@ -15,9 +16,9 @@ public class ForgotPasswordPage extends BasePage {
 
   public void openLogin(String baseUrl) {
     String url = baseUrl.endsWith("/") ? baseUrl + "Site/Login?status=NotLoggedIn" : baseUrl + "/Site/Login?status=NotLoggedIn";
+    page.context().clearCookies();
     page.navigate(url);
-    PlaywrightManager.waitForNetworkIdle();
-  }
+    page.waitForLoadState(LoadState.NETWORKIDLE);  }
 
   public void goToForgotPassword() {
     // Try several variants: link, button, text, regex (case-insensitive)
@@ -53,8 +54,7 @@ public class ForgotPasswordPage extends BasePage {
     Locator submit = page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Submit"));
     RetryUtils.retryVoid(cfg.actionRetryCount(), cfg.actionRetryDelayMs(), submit::click);
 
-    PlaywrightManager.waitForNetworkIdle();
-  }
+    page.waitForLoadState(LoadState.NETWORKIDLE);  }
 
   public boolean isSubmissionThankYouVisible() {
     Locator msg = page.getByText("Thank you for the submission");

@@ -14,10 +14,12 @@ public class RegistrationPage extends BasePage {
   private final Config cfg = ConfigLoader.load();
 
   public RegistrationPage(Page page) {
+
     super(page);
   }
 
   public void openLogin(String baseUrl) {
+    page.context().clearCookies();
     String url = baseUrl.endsWith("/") ?
             baseUrl + "Site/Login?status=NotLoggedIn" :
             baseUrl + "/Site/Login?status=NotLoggedIn";
@@ -60,7 +62,8 @@ public class RegistrationPage extends BasePage {
     Locator next = page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Next"));
     RetryUtils.retryVoid(cfg.actionRetryCount(), cfg.actionRetryDelayMs(), () -> next.click());
 
-    PlaywrightManager.waitForNetworkIdle();
+    //PlaywrightManager.waitForNetworkIdle();
+    page.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE);
   }
 
   public void setPasswordAndNext(String password) {
@@ -71,7 +74,8 @@ public class RegistrationPage extends BasePage {
     Locator next = page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Next"));
     RetryUtils.retryVoid(cfg.actionRetryCount(), cfg.actionRetryDelayMs(), () -> next.click());
 
-    PlaywrightManager.waitForNetworkIdle();
+    //PlaywrightManager.waitForNetworkIdle();
+    page.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE);
   }
 
   public void fillProfileAndNext(String first, String last, String phone) {
@@ -85,7 +89,8 @@ public class RegistrationPage extends BasePage {
     Locator next = page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Next"));
     RetryUtils.retryVoid(cfg.actionRetryCount(), cfg.actionRetryDelayMs(), () -> next.click());
 
-    PlaywrightManager.waitForNetworkIdle();
+    //PlaywrightManager.waitForNetworkIdle();
+    page.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE);
   }
 
   public void selectStore(String storeName) {
@@ -112,7 +117,8 @@ public class RegistrationPage extends BasePage {
     Locator createBtn = page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("CREATE ACCOUNT"));
     WaitUtils.visible(createBtn, 20000);
     RetryUtils.retryVoid(cfg.actionRetryCount(), cfg.actionRetryDelayMs(), createBtn::click);
-    PlaywrightManager.waitForNetworkIdle();
+    //PlaywrightManager.waitForNetworkIdle();
+    page.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE);
   }
 
   public boolean isThankYouVisibleStrict() {

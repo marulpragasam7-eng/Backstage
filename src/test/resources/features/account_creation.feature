@@ -1,4 +1,4 @@
-@regression@loginWindow @smoke
+@regression@loginWindow @smoke @createaccount
 Feature: Account Management (Creation and Recovery)
   As a user of the application
   I want to manage my account access and credentials

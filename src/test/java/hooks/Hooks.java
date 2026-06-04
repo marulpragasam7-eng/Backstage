@@ -1,97 +1,88 @@
 package hooks;
 
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.options.AriaRole;
 import core.Config;
 import core.ConfigLoader;
 import core.PlaywrightManager;
 import io.cucumber.java.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-// import pages.PricebookPage; // Removed, unless the Logger needs it specifically
-// The imports below are ONLY needed if you had static imports for the ThreadLocals,
-// but since that's bad practice and the core issue, I'm removing the non-standard imports.
-// import static core.PlaywrightManager.TL_CONTEXT;
-// import static core.PlaywrightManager.TL_BROWSER;
-// import static core.PlaywrightManager.TL_PAGE;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.regex.Pattern;
 
 public class Hooks {
-  private Config cfg;
   private static final Logger log = LoggerFactory.getLogger(Hooks.class);
+  private static final Path AUTH_FILE = Paths.get("target/auth.json");
+  private static boolean isAuthChecked = false;
 
 
   @Before(order = 0)
-  public void beforeScenario(Scenario scenario) {
-    cfg = ConfigLoader.load();
-    // ➡️ 1. MODIFICATION: This is the ONLY call needed to handle new session or reuse.
-    PlaywrightManager.create(cfg);
+  public void beforeScenario(Scenario scenario) throws IOException {
+    Config cfg = ConfigLoader.load();
 
-    // Set timeouts on the newly created or reused Page object.
-    var page = PlaywrightManager.page();
-    page.setDefaultTimeout(30000);             // actions/element waits
-    page.setDefaultNavigationTimeout(45000);   // navigations
-
-    log.info("Starting scenario: {}", scenario.getName());
-  }
-
-  // --- No Change Needed Here ---
-  @After(order = 10)
-  public void afterScenario(Scenario scenario) {
-    if (scenario.isFailed()) {
-      try {
-        byte[] png = PlaywrightManager.page().screenshot(
-                new Page.ScreenshotOptions().setFullPage(true));
-        scenario.attach(png, "image/png", "Failure Screenshot");
-        log.error("Screenshot attached for failed scenario: {}", scenario.getName());
-      } catch (Exception ignored) {
-        log.error("Could not take screenshot for failed scenario: {}", scenario.getName(), ignored);
+    synchronized (Hooks.class) {
+      if (!isAuthChecked && !scenario.getSourceTagNames().contains("@login")) {
+        if (!Files.exists(AUTH_FILE)) {
+          log.info("No session found. Performing one-time login...");
+          performOneTimeLogin(cfg);
+        }
+        isAuthChecked = true;
       }
     }
-  }
 
-  // --- No Change Needed Here ---
-  @After(order = 5)
-  public void stopTracing(Scenario scenario) {
-    if (cfg != null && cfg.trace()) {
-      PlaywrightManager.stopTracingIfAny(scenario.getName());
+    if (scenario.getSourceTagNames().contains("@login")) {
+      PlaywrightManager.create(cfg);
+    } else {
+      PlaywrightManager.create(cfg, AUTH_FILE);
     }
   }
 
-  // --- No Change Needed Here ---
-  /**
-   * Final teardown logic.
-   * - If the scenario failed, it forces a complete browser shutdown.
-   * - If the scenario succeeded, it navigates to the homepage and keeps the browser open for the next scenario.
-   */
-  @After(order = 0)
-  public void finalTearDown(Scenario scenario) {
+  private void performOneTimeLogin(Config cfg) throws IOException {
+    log.info(">>>> STARTING ONE-TIME LOGIN ATTEMPT <<<<");
+    Files.createDirectories(AUTH_FILE.getParent());
+    PlaywrightManager.create(cfg);
     Page page = PlaywrightManager.page();
 
-    if (scenario.isFailed()) {
-      // Failed scenario: Must close everything to ensure a clean session for the next test.
-      PlaywrightManager.close(scenario, cfg, true); // forceClose = true
-    } else {
-      // Successful scenario: Navigate home and keep the session open.
-      if (page != null && cfg != null) {
-        try {
-          // Navigates the current page back to a known state (homepage)
-          page.navigate(cfg.baseUrl());
-          log.info("Scenario successful. Navigated to homepage: {} for session reuse.", cfg.baseUrl());
-        } catch (Exception e) {
-          log.error("Failed to navigate to homepage for session reuse. Forcing browser close.", e);
-          PlaywrightManager.close(scenario, cfg, true); // Fallback to force close
-          return;
-        }
+    try {
+      page.navigate(cfg.baseUrl());
+
+      if (!page.url().contains("Login") && !page.url().contains("login")) {
+        page.navigate(cfg.baseUrl() + "/Site/Login?status=NotLoggedIn");
       }
-      // Keeps Browser/Context open.
-      PlaywrightManager.close(scenario, cfg, false); // forceClose = false
+
+      page.getByLabel("Email").or(page.getByPlaceholder("Email")).or(page.locator("input[type='email']")).first()
+              .fill(cfg.email());
+      page.getByLabel("Password").or(page.getByPlaceholder("Password")).or(page.locator("input[type='password']")).first()
+              .fill(cfg.password());
+
+      page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(Pattern.compile("Login|Sign In|Log In", Pattern.CASE_INSENSITIVE)))
+              .click();
+
+      page.waitForCondition(() -> !page.url().contains("login"), new Page.WaitForConditionOptions().setTimeout(20000));
+
+      PlaywrightManager.saveStorageState(AUTH_FILE);
+      log.info(">>>> AUTH STATE SAVED SUCCESSFULLY <<<<");
+
+    } catch (Exception e) {
+      log.error("Login failed! Capturing screenshot for debugging...");
+      page.screenshot(new Page.ScreenshotOptions().setPath(Paths.get("target/auth_failure.png")));
+      throw e;
+    } finally {
+      PlaywrightManager.close(null, cfg, false);
     }
   }
 
-  // ➡️ 2. MODIFICATION: Ensure this method uses the correct class name for the logger.
+  @After(order = 0)
+  public void tearDown(Scenario scenario) {
+    PlaywrightManager.close(scenario, ConfigLoader.load(), scenario.isFailed());
+  }
+
   @AfterAll
   public static void globalCleanup() {
-    log.info("Finished all scenarios. Performing final global browser cleanup.");
-    // Calling the close method with forceClose=true on nulls forces the full cleanup.
     PlaywrightManager.close(null, null, true);
   }
 }
