@@ -1,5 +1,3 @@
-# Maven Build Pipeline for Azure DevOps
-
 trigger:
 - main
 
@@ -8,28 +6,27 @@ pool:
 
 steps:
 
-# Check Java and Maven installation
+- checkout: self
+  fetchDepth: 1
+
 - script: |
-    echo "Checking Java version..."
+    echo "Checking Java installation..."
     java -version
 
-    echo "Checking Maven version..."
+    echo "Checking Maven installation..."
     mvn -version
   displayName: 'Verify Java and Maven'
 
-# Build the Maven project
 - script: |
     mvn clean package
   displayName: 'Build Maven Project'
 
-# Publish Test Results
 - task: PublishTestResults@2
   inputs:
     testResultsFiles: '**/surefire-reports/TEST-*.xml'
-    testRunTitle: 'Maven Test Results'
+    testRunTitle: 'JUnit Test Results'
   condition: succeededOrFailed()
 
-# Publish Build Artifacts
 - task: PublishBuildArtifacts@1
   inputs:
     PathtoPublish: 'target'
