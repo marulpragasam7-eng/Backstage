@@ -35,3 +35,14 @@ jobs:
       run: xvfb-run --auto-servernum --server-args="-screen 0 1280x1024x24" mvn -B package --file pom.xml
       env:
         CI: false # Set to false so PlaywrightManager launches the headed UI browser
+
+    # 4. Upload videos and trace logs so you can download and watch the execution browser steps
+    - name: Upload Test Recording Artifacts
+      if: always() # Ensures recordings upload even if a test or build fails
+      uses: actions/upload-artifact@v4
+      with:
+        name: playwright-recordings
+        path: |
+          target/videos/
+          target/traces/
+        retention-days: 7
