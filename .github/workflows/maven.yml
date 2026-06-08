@@ -46,3 +46,28 @@ jobs:
           target/videos/
           target/traces/
         retention-days: 7
+# New job to deploy the Extent Report to a live URL
+  deploy-report:
+    needs: build
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+    - name: Checkout gh-pages branch
+      uses: actions/checkout@v4
+      with:
+        ref: gh-pages
+        path: gh-pages
+      continue-on-error: true
+
+    - name: Download Reports
+      uses: actions/download-artifact@v4
+      with:
+        name: test-execution-results
+        path: report-data
+
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v4
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./report-data
+        publish_branch: gh-pages
