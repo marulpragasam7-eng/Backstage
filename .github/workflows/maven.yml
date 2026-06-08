@@ -36,7 +36,7 @@ jobs:
       env:
         CI: false # Set to false so PlaywrightManager launches the headed UI browser
 
-    # 4. Correctly upload videos, trace logs, and Extent Reports under the expected name
+    # 4. Upload videos, trace logs, and Extent Reports
     - name: Upload Test Recording & Report Artifacts
       if: always() # Ensures reports upload even if a test or build fails
       uses: actions/upload-artifact@v4
@@ -54,9 +54,13 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     if: always()
+    
+    # CRITICAL FIX: Explicitly grant write access to the deploy job context
+    permissions: write-all
+
     steps:
     - name: Checkout Source Code
-      uses: actions/checkout@v4 # Changed from targeting gh-pages to regular checkout to avoid git fetch crashes
+      uses: actions/checkout@v4
 
     - name: Download Reports
       uses: actions/download-artifact@v4
@@ -69,4 +73,4 @@ jobs:
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./report-data
-        publish_branch: gh-pages # This action will automatically create the branch if it doesn't exist
+        publish_branch: gh-pages
