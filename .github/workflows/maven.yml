@@ -19,10 +19,8 @@ jobs:
 
     runs-on: ubuntu-latest
 
-    # Add explicit permissions to allow the dependency-submission-action to upload snapshots
-    permissions:
-      contents: write           # Required to checkout code and submit dependencies
-      dependency-graph: write   # Required to write to the repository dependency graph
+    # Grants full write capabilities to this job runner to allow dependency graph API submissions
+    permissions: write-all
 
     steps:
     - uses: actions/checkout@v4
