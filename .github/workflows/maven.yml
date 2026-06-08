@@ -36,28 +36,27 @@ jobs:
       env:
         CI: false # Set to false so PlaywrightManager launches the headed UI browser
 
-    # 4. Upload videos and trace logs so you can download and watch the execution browser steps
-    - name: Upload Test Recording Artifacts
-      if: always() # Ensures recordings upload even if a test or build fails
+    # 4. Correctly upload videos, trace logs, and Extent Reports under the expected name
+    - name: Upload Test Recording & Report Artifacts
+      if: always() # Ensures reports upload even if a test or build fails
       uses: actions/upload-artifact@v4
       with:
-        name: playwright-recordings
+        name: test-execution-results
         path: |
           target/videos/
           target/traces/
+          target/ExtentReport/
+          target/*.html
         retention-days: 7
-# New job to deploy the Extent Report to a live URL
+
+  # New job to deploy the Extent Report to a live URL via GitHub Pages
   deploy-report:
     needs: build
     runs-on: ubuntu-latest
     if: always()
     steps:
-    - name: Checkout gh-pages branch
-      uses: actions/checkout@v4
-      with:
-        ref: gh-pages
-        path: gh-pages
-      continue-on-error: true
+    - name: Checkout Source Code
+      uses: actions/checkout@v4 # Changed from targeting gh-pages to regular checkout to avoid git fetch crashes
 
     - name: Download Reports
       uses: actions/download-artifact@v4
@@ -70,4 +69,4 @@ jobs:
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./report-data
-        publish_branch: gh-pages
+        publish_branch: gh-pages # This action will automatically create the branch if it doesn't exist
