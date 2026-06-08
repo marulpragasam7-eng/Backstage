@@ -15,5 +15,5 @@ import static io.cucumber.junit.platform.engine.Constants.*;
         "rerun:target/rerun.txt, " +
         "com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:")
 @ConfigurationParameter(key = SNIPPET_TYPE_PROPERTY_NAME, value = "camelcase")
-@ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "@smoke") // <-- ADDED THIS LINE
+@ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "@forgot") // <-- ADDED THIS LINE
 public class RunCukesTest { }
