@@ -19,6 +19,11 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    # Add explicit permissions to allow the dependency-submission-action to upload snapshots
+    permissions:
+      contents: write           # Required to checkout code and submit dependencies
+      dependency-graph: write   # Required to write to the repository dependency graph
+
     steps:
     - uses: actions/checkout@v4
     
@@ -29,7 +34,7 @@ jobs:
         distribution: 'temurin'
         cache: maven
 
-    # New Step: Pulls down all underlying Linux system dependencies required by Playwright browsers
+    # Pulls down all underlying Linux system dependencies required by Playwright browsers
     - name: Install Playwright OS Dependencies
       run: mvn exec:java -e -D exec.mainClass=com.microsoft.playwright.CLI -D exec.args="install-deps"
 
@@ -38,6 +43,6 @@ jobs:
       env:
         CI: true # Explicitly ensuring the CI flag is shared in the shell context
 
-    # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
+    # Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts
     - name: Update dependency graph
       uses: advanced-security/maven-dependency-submission-action@571e99aab1055c2e71a1e2309b9691de18d6b7d6
