@@ -44,6 +44,16 @@ jobs:
       run: xvfb-run --auto-servernum mvn -B package --file pom.xml
       env:
         CI: true
+    - name: Upload Test Reports Artifact
+      if: always() # Ensures reports are uploaded even if some tests failed
+      uses: actions/upload-artifact@v4
+      with:
+        name: playwright-cucumber-reports
+        path: |
+          target/cucumber-reports/
+          target/extent-reports/
+          target/surefire-reports/
+        retention-days: 7
 
     # 5. Securely upload the full dependency graph to GitHub
     - name: Update dependency graph
