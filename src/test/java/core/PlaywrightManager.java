@@ -17,29 +17,19 @@ public class PlaywrightManager {
     public static Browser browser;
     public static BrowserContext context;
     public static Page page;
-
-    private static void init(Config cfg) {
-        if (playwright == null) {
-            playwright = Playwright.create();
-            
-            // Check if running in a CI environment (GitHub Actions, GitLab, Jenkins, etc. set CI=true)
-            boolean isCI = "true".equalsIgnoreCase(System.getenv("CI"));
-            
-            // Override headless setting if we are executing on a CI runner
-            boolean determineHeadless = isCI || cfg.headless();
-
-            BrowserType.LaunchOptions options = new BrowserType.LaunchOptions()
-                    .setHeadless(determineHeadless);
-
-            // Maximize only if running locally/headed to avoid Ozone/X11 setup bugs in CI
-            if (!determineHeadless) {
-                options.setArgs(java.util.List.of("--start-maximized"));
-            }
-
-            log.info("Launching Chromium browser. Headless mode set to: {}", determineHeadless);
-            browser = playwright.chromium().launch(options);
-        }
+private static void init(Config cfg) {
+    if (playwright == null) {
+        playwright = Playwright.create();
+        
+        // Ensure cfg.headless() evaluates to false for headed execution
+        browser = playwright.chromium().launch(
+            new BrowserType.LaunchOptions()
+                .setHeadless(false) 
+                .setArgs(java.util.List.of("--start-maximized"))
+        );
     }
+}
+    
 
     public static void create(Config cfg) {
         create(cfg, null);
