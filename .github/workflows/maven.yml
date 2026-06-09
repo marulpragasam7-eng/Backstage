@@ -13,7 +13,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    permissions: write-all
+    # Restricting broad "write-all" permissions to only what is explicitly required for security best practices
+    permissions:
+      contents: write
 
     steps:
     - uses: actions/checkout@v4
@@ -25,20 +27,24 @@ jobs:
         distribution: 'temurin'
         cache: maven
 
-    # --- ADDED STEP START ---
-    - name: Install Playwright Operating System Dependencies
-      run: sudo mvn exec:java -e -D exec.mainClass=com.microsoft.playwright.CLI -D exec.args="install-deps"
-    # --- ADDED STEP END ---
+    # 1. Generate the project classpath file so the Playwright CLI can locate your project dependencies
+    - name: Build Project Classpath
+      run: mvn dependency:build-classpath -Dmdep.outputFile=cp.txt
 
-    # Optional: If you also want to download the actual browser binaries (Chromium, Firefox, WebKit), 
-    # you can uncomment the step below:
-    # - name: Install Playwright Browsers
-    #   run: mvn exec:java -e -D exec.mainClass=com.microsoft.playwright.CLI -D exec.args="install"
+    # 2. Install the Playwright OS system dependencies (Replaces your sudo step safely)
+    - name: Install Playwright OS Dependencies
+      run: java -cp "$(cat cp.txt)" com.microsoft.playwright.CLI install-deps
 
+    # 3. Explicitly download and install the required browser binaries (Uncommented and fixed)
+    - name: Install Playwright Browsers
+      run: java -cp "$(cat cp.txt)" com.microsoft.playwright.CLI install
+
+    # 4. Execute your test suite headlessly via Maven
     - name: Build with Maven
-      run: xvfb-run mvn -B package --file pom.xml
+      run: mvn -B package --file pom.xml
+      env:
+        CI: true
 
-    # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
-    # (Note: pinned to a specific commit for security)
+    # 5. Securely upload the full dependency graph to GitHub
     - name: Update dependency graph
       uses: advanced-security/maven-dependency-submission-action@571e99aab1055c2e71a1e2309b9691de18d6b7d6
