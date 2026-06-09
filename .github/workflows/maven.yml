@@ -13,7 +13,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    # Restricting broad "write-all" permissions to only what is explicitly required for security best practices
     permissions:
       contents: write
 
@@ -31,30 +30,64 @@ jobs:
     - name: Build Project Classpath
       run: mvn dependency:build-classpath -Dmdep.outputFile=cp.txt
 
-    # 2. Install the Playwright OS system dependencies (Replaces your sudo step safely)
+    # 2. Install the Playwright OS system dependencies
     - name: Install Playwright OS Dependencies
       run: java -cp "$(cat cp.txt)" com.microsoft.playwright.CLI install-deps
 
-    # 3. Explicitly download and install the required browser binaries (Uncommented and fixed)
+    # 3. Explicitly download and install Chromium browser binaries
     - name: Install Playwright Browsers
-      run: java -cp "$(cat cp.txt)" com.microsoft.playwright.CLI install
+      run: java -cp "$(cat cp.txt)" com.microsoft.playwright.CLI install chromium
 
-    # 4. Execute your test suite headlessly via Maven
+    # 4. Execute your test suite in a virtual display (Headed Mode)
     - name: Build with Maven
       run: xvfb-run --auto-servernum mvn -B package --file pom.xml
       env:
         CI: true
+
+    # 5. Automatically compress the test reports into a single ZIP file
+    - name: Compress Test Reports into ZIP
+      if: always() # Runs even if tests fail so you get the error logs
+      run: |
+        echo "Creating test-results zip file..."
+        # This zips the target report folders into a single file named test-reports.zip
+        zip -r test-reports.zip target/cucumber-reports/ target/extent-reports/ target/surefire-reports/ || true
+
+    # 6. Send Email Notification with the ZIP file attached
+    - name: Send Email Report Notification
+      if: success() # Only runs if the build and all tests pass
+      uses: dawidd6/action-send-mail@v3
+      with:
+        server_address: ${{ secrets.MAIL_SERVER }}
+        server_port: 465
+        username: ${{ secrets.MAIL_USERNAME }}
+        password: ${{ secrets.MAIL_PASSWORD }}
+        
+        subject: "Pipeline Success: Playwright Test Reports Attached!"
+        to: marulpragasam7@gmail.com, arulpragasam.mathiyazhagan@cognizant.com
+        from: GitHub Actions Automation <no-reply@github.com>
+        body: |
+          Hello Team,
+
+          The automated test pipeline completed successfully on GitHub Actions.
+          
+          Chromium was launched and all targeted test scenarios have passed. The generated Cucumber and Extent HTML execution reports have been zipped and attached directly to this email for your convenience.
+          
+          You can also view the execution history directly on GitHub:
+          https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          
+        # --- ATTACHMENT CONFIGURATION ---
+        attachments: test-reports.zip
+
+    # 7. Keep your standard GitHub artifact upload as a backup repository reference
     - name: Upload Test Reports Artifact
-      if: always() # Ensures reports are uploaded even if some tests failed
+      if: always()
       uses: actions/upload-artifact@v4
       with:
         name: playwright-cucumber-reports
-        path: |
-          target/cucumber-reports/
-          target/extent-reports/
-          target/surefire-reports/
+        path: test-reports.zip
         retention-days: 7
 
-    # 5. Securely upload the full dependency graph to GitHub
+    # 8. Securely upload the full dependency graph to GitHub
     - name: Update dependency graph
+      if: always()
       uses: advanced-security/maven-dependency-submission-action@571e99aab1055c2e71a1e2309b9691de18d6b7d6
